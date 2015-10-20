@@ -94,13 +94,28 @@ Testing&lt;-read.csv(&quot;./pml-testing.csv&quot;,header = TRUE, na.strings =  
 <div id="data-cleaning" class="section level3">
 <h3><strong>Data Cleaning</strong></h3>
 <p>For data cleaning, first we will remove the columns with missing values inside. Then we will remove the variables with near zero variation as those variables will not affect to the model much. Finally we will change the variables into numeric. Also, we will load the library that needed for the model building.</p>
-<pre class="r"><code>library(caret)
-library(randomForest)
-library(rpart)
+<pre class="r"><code>library(caret)</code></pre>
+<pre><code>## Loading required package: lattice
+## Loading required package: ggplot2</code></pre>
+<pre class="r"><code>library(randomForest)</code></pre>
+<pre><code>## randomForest 4.6-12
+## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre class="r"><code>library(rpart)
 library(rpart.plot)
-library(rattle)
-library(RColorBrewer)
+library(rattle)</code></pre>
+<pre><code>## Loading required package: RGtk2
+## Rattle: A free graphical interface for data mining with R.
+## Version 3.5.0 Copyright (c) 2006-2015 Togaware Pty Ltd.
+## Type 'rattle()' to shake, rattle, and roll your data.</code></pre>
+<pre class="r"><code>library(RColorBrewer)
 library(pROC)</code></pre>
+<pre><code>## Type 'citation(&quot;pROC&quot;)' for a citation.
+## 
+## Attaching package: 'pROC'
+## 
+## The following objects are masked from 'package:stats':
+## 
+##     cov, smooth, var</code></pre>
 <pre class="r"><code>Training&lt;-Training[,colSums(is.na(Training))==0]
 Testing&lt;-Testing[,colSums(is.na(Testing))==0]
 
@@ -135,8 +150,9 @@ Train2&lt;-Training[-inTrain,]</code></pre>
 <p>First, we set the train control using 10 K cross validations:</p>
 <pre class="r"><code>traincontrol&lt;- trainControl(method = &quot;cv&quot;, number = 10,classProbs = TRUE)</code></pre>
 <p>We start the Multi-nomial Regression first</p>
-<pre class="r"><code>RegModel&lt;-train(classe~.,method = &quot;multinom&quot;, data=Train1,trControl=traincontrol)
-Model1&lt;-predict(RegModel,newdata=Train2)</code></pre>
+<pre class="r"><code>RegModel&lt;-train(classe~.,method = &quot;multinom&quot;, data=Train1,trControl=traincontrol)</code></pre>
+<pre><code>## Loading required package: nnet</code></pre>
+<pre class="r"><code>Model1&lt;-predict(RegModel,newdata=Train2)</code></pre>
 <p>Now we check the result of predicted result from validation dataset with its original result</p>
 <pre><code>## Confusion Matrix and Statistics
 ## 

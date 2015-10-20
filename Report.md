@@ -37,12 +37,48 @@ For data cleaning, first we will remove the columns with missing values inside. 
 
 ```r
 library(caret)
+```
+
+```
+## Loading required package: lattice
+## Loading required package: ggplot2
+```
+
+```r
 library(randomForest)
+```
+
+```
+## randomForest 4.6-12
+## Type rfNews() to see new features/changes/bug fixes.
+```
+
+```r
 library(rpart)
 library(rpart.plot)
 library(rattle)
+```
+
+```
+## Loading required package: RGtk2
+## Rattle: A free graphical interface for data mining with R.
+## Version 3.5.0 Copyright (c) 2006-2015 Togaware Pty Ltd.
+## Type 'rattle()' to shake, rattle, and roll your data.
+```
+
+```r
 library(RColorBrewer)
 library(pROC)
+```
+
+```
+## Type 'citation("pROC")' for a citation.
+## 
+## Attaching package: 'pROC'
+## 
+## The following objects are masked from 'package:stats':
+## 
+##     cov, smooth, var
 ```
 
 
@@ -111,6 +147,13 @@ We start the Multi-nomial Regression first
 
 ```r
 RegModel<-train(classe~.,method = "multinom", data=Train1,trControl=traincontrol)
+```
+
+```
+## Loading required package: nnet
+```
+
+```r
 Model1<-predict(RegModel,newdata=Train2)
 ```
 

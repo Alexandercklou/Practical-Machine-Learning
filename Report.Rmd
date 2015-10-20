@@ -3,9 +3,9 @@ title: "Project for Practical Machine Learning"
 author: "Alexander Lou"
 date: "20 October 2015"
 output: 
-  html_document: 
+  html_document:
+    fig_caption: yes
     keep_md: yes
-fig_caption: yes
 ---
 
 ##**Background**
