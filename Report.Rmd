@@ -1,0 +1,148 @@
+---
+title: "Project for Practical Machine Learning"
+author: "Alexander Lou"
+date: "20 October 2015"
+output: html_document
+fig_caption: yes
+---
+
+##**Background**
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+
+##**Goal**
+
+The goal of the project is to predict the manner in which they did the exercise. 
+
+##**Data Processing**
+
+###**Load and Read Data**
+
+The code below are used to load and read the data:
+
+```{r,echo=TRUE,cache=TRUE}
+if (!file.exists("./pml-training.csv")) 
+{download.file(url="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", destfile="./pml-training.csv", method = "libcurl")}
+
+if (!file.exists("./pml-testing.csv")) 
+{download.file(url="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", destfile="./pml-testing.csv", method = "libcurl")}
+
+Training<-read.csv("./pml-training.csv",header = TRUE, na.strings = c("NA",""),sep=",")
+Testing<-read.csv("./pml-testing.csv",header = TRUE, na.strings =  c("NA",""),sep=",")
+```
+
+The training data set has 19,622 obs and 160 variables and the testing data set has 20 obs and 160 variables. The variable **classe** has 5 levels.
+
+###**Data Cleaning**
+
+For data cleaning, first we will remove the columns with missing values inside. Then we will remove the variables with near zero variation as those variables will not affect to the model much. Finally we will change the variables into numeric. Also, we will load the library that needed for the model building.
+
+```{r,echo=TRUE,cache=TRUE}
+library(caret)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(RColorBrewer)
+library(pROC)
+```
+
+
+```{r,echo=TRUE,cache=TRUE}
+Training<-Training[,colSums(is.na(Training))==0]
+Testing<-Testing[,colSums(is.na(Testing))==0]
+
+nzv <- nearZeroVar(Training, saveMetrics=TRUE)
+Training <- Training[,nzv$nzv==FALSE]
+nzv1<- nearZeroVar(Testing,saveMetrics=TRUE)
+Testing <- Testing[,nzv1$nzv==FALSE]
+Training<-Training[,-1]
+Testing<-Testing[,-1]
+classe1<-Training$classe
+classe2<-Testing$classe
+Training <- Training[, sapply(Training, is.numeric)]
+Testing <- Testing[, sapply(Testing, is.numeric)]
+Training$classe<-classe1
+dim(Training)
+dim(Testing)
+```
+
+After that, the no. of variables in both the training and testing set will be reduced to 56. 
+
+###**Data splitting**
+
+We will use the training set data and split into two. One is for training and one is for validation.
+
+```{r,echo=TRUE,cache=TRUE}
+set.seed(820910)
+inTrain<-createDataPartition(y=Training$classe,p=0.6,list=FALSE)
+Train1<-Training[inTrain,]
+Train2<-Training[-inTrain,]
+```
+
+###**Model Building**
+
+In here, we will use three different algorithms to build the model. They are:
+1. Multi-nomial Regression
+2. Decision Tree
+3. Random Forest
+
+First, we set the train control using 10 K cross validations:
+
+
+```{r,echo=TRUE,cache=TRUE}
+traincontrol<- trainControl(method = "cv", number = 10,classProbs = TRUE)
+```
+
+We start the Multi-nomial Regression first
+
+```{r,echo=TRUE,cache=TRUE,results='hide'}
+RegModel<-train(classe~.,method = "multinom", data=Train1,trControl=traincontrol)
+Model1<-predict(RegModel,newdata=Train2)
+```
+
+Now we check the result of predicted result from validation dataset with its original result
+
+```{r,echo=FALSE,cache=TRUE}
+confusionMatrix(Model1,Train2$classe)
+```
+
+From the result, the accuracy is 64% in which is relatively low. Now we try to use Decision Tree and see will the performance get better.
+
+```{r,echo=TRUE,cache=TRUE}
+DecisionTree<-rpart(classe~.,method ="class", data=Train1)
+Model2<-predict(DecisionTree,newdata=Train2,type="class")
+confusionMatrix(Model2,Train2$classe)
+```
+
+The accuracy has improved to almost 82% in which is quite good. The structure of the tree is look like this:
+
+```{r plot1, fig.align='center',fig.height=4,cache=TRUE}
+fancyRpartPlot(DecisionTree,sub="")
+```
+
+Finally we try to use Random Forest to build the model.
+
+```{r,echo=FALSE,cache=TRUE}
+RandomForest<-randomForest(classe ~. , data=Train1, method="class",trControl=traincontrol)
+Model3<-predict(RandomForest,newdata=Train2, type ="class")
+confusionMatrix(Model3,Train2$classe)
+```
+
+From the result, we can see that the accuracy for Random Forest reached to 99% and only 11 obs out of 7,846 obs are mis-predicted. We plot out the ROC curve and compared the AUC of the three model.
+
+```{r plot2, fig.align='center',fig.height=4,echo=FALSE,cache=TRUE,results='hide'}
+plot.roc(Train2$classe, as.numeric(Model1),col="green",percent=TRUE,print.auc=TRUE, print.auc.pattern="Model 1 Auc:%.1f%%", print.auc.col="green",main="AUC comparison")
+plot.roc(Train2$classe,as.numeric(Model2),col="blue",percent=TRUE,add=TRUE,print.auc=TRUE,print.auc.pattern="Model 2 Auc:%.1f%%", print.auc.col="blue",print.auc.y=40)
+plot.roc(Train2$classe,as.numeric(Model3),col="red",percent=TRUE,add=TRUE,print.auc=TRUE,print.auc.pattern="Model 3 Auc:%.1f%%", print.auc.col="red",print.auc.y=60)
+
+```
+
+From the plot, we can see that the model using Random Forest to build has a high AUC than other models. Therefore, we can conclue that using Random Forest is the best option for this project and we will use that to generate the result for the test set.
+
+```{r,echo=TRUE,cache=TRUE}
+Result<-predict(RandomForest,newdata=Testing, type ="class")
+print(Result)
+```
+
+
